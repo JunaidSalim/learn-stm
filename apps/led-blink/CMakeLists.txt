@@ -7,7 +7,7 @@ add_executable(led-blink
 
 target_include_directories(led-blink PRIVATE Core/Inc)
 
-target_link_libraries(led-blink PRIVATE STM32_Drivers)
+target_link_libraries(led-blink PRIVATE board)
 
 target_link_options(led-blink PRIVATE
     -T${CMAKE_CURRENT_SOURCE_DIR}/STM32F103XX_FLASH.ld)

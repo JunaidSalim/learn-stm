@@ -1,2 +1,3 @@
 add_subdirectory(stm32cubemx)
 add_subdirectory(stm32drivers)
+add_subdirectory(board)

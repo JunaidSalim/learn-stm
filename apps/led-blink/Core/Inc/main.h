@@ -5,7 +5,6 @@
 #include <stdint.h>
 
 #include <stm32f1xx.h>
-
-void Error_Handler(void);
+#include "board.h"
 
 #endif /* __MAIN_H */

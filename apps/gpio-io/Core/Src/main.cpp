@@ -17,15 +17,48 @@
 #include <stdio.h>
 #include <string.h>
 
+UART_HandleTypeDef huart2;
+
 int main(void) {
   HAL_Init();
   SystemClockInit();
 
+  // 1. Button: PC13 as input ( the blue button on STM32 )
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  GPIOInitStruct(GPIOC, GPIO_PIN_13, GPIO_MODE_INPUT, GPIO_NOPULL);
+
+  // 2. UART: USART2 for sending output
   __HAL_RCC_GPIOA_CLK_ENABLE();
-  GPIOInitStruct(GPIOA, GPIO_PIN_5, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL);
+  __HAL_RCC_USART2_CLK_ENABLE();
+
+  GPIOInitStruct(GPIOA, GPIO_PIN_2, GPIO_MODE_AF_PP, GPIO_NOPULL, 3);
+  GPIOInitStruct(GPIOA, GPIO_PIN_3, GPIO_MODE_INPUT, GPIO_NOPULL);
+  GPIOInitStruct(GPIOA, GPIO_PIN_5, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL);  // LED
+
+  huart2.Instance = USART2;                     // which hardware block
+  huart2.Init.BaudRate = 115200;                // speed: bits per second
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;  // 8 data bits per byte
+  huart2.Init.StopBits = UART_STOPBITS_1;       // 1 stop bit
+  huart2.Init.Parity = UART_PARITY_NONE;        // no error-check bit
+  huart2.Init.Mode = UART_MODE_TX_RX;           // enable transmitter and receiver
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;  // no RTS/CTS extra wires
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  HAL_UART_Init(&huart2);
+
+  GPIO_PinState last = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);  // the starting button state
 
   while (1) {
-    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-    HAL_Delay(1000);  // 1 sec
+    GPIO_PinState now = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);
+
+    if (now != last) {
+      const bool pressed = (now == GPIO_PIN_RESET);  // active-low button
+
+      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, pressed ? GPIO_PIN_SET : GPIO_PIN_RESET);
+
+      const char* msg = pressed ? "Pressed - LED on\r\n" : "Released - LED off\r\n";
+      HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), 100);
+
+      last = now;
+    }
   }
 }

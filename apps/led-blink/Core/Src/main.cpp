@@ -34,6 +34,21 @@ int main(void) {
   }
 }
 
+// int main(void) {
+//   HAL_Init();  // starts SysTick so HAL_Delay works (clock stays at 8 MHz HSI, fine here)
+//   __HAL_RCC_GPIOA_CLK_ENABLE();
+
+//   volatile uint32_t* GPIOA_CRL = (uint32_t*)0x40010800;
+//   volatile uint32_t* GPIOA_ODR = (uint32_t*)(0x40010800 + 0x0C);
+
+//   *GPIOA_CRL = (*GPIOA_CRL & ~(0xF << 20)) | (0x2 << 20);  // PA5 output, 2 MHz, push-pull
+
+//   while (1) {
+//     *GPIOA_ODR ^= (1 << 5);  // toggle PA5
+//     HAL_Delay(500);
+//   }
+// }
+
 void Error_Handler(void) {
   __disable_irq();
   while (1) {

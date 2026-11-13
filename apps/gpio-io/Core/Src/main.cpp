@@ -18,6 +18,16 @@
 #include <string.h>
 
 UART_HandleTypeDef huart2;
+volatile bool g_pressed = false;
+volatile bool g_buttonChanged = false;
+
+extern "C" void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+  if (GPIO_Pin == GPIO_PIN_13) {
+    g_pressed = (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, g_pressed ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    g_buttonChanged = true;
+  }
+}
 
 int main(void) {
   HAL_Init();
@@ -25,7 +35,7 @@ int main(void) {
 
   // 1. Button: PC13 as input ( the blue button on STM32 )
   __HAL_RCC_GPIOC_CLK_ENABLE();
-  GPIOInitStruct(GPIOC, GPIO_PIN_13, GPIO_MODE_INPUT, GPIO_NOPULL);
+  GPIOInitStruct(GPIOC, GPIO_PIN_13, GPIO_MODE_IT_RISING_FALLING, GPIO_NOPULL);
 
   // 2. UART: USART2 for sending output
   __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -44,21 +54,13 @@ int main(void) {
   huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;  // no RTS/CTS extra wires
   huart2.Init.OverSampling = UART_OVERSAMPLING_16;
   HAL_UART_Init(&huart2);
-
-  GPIO_PinState last = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);  // the starting button state
+  // HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
   while (1) {
-    GPIO_PinState now = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);
-
-    if (now != last) {
-      const bool pressed = (now == GPIO_PIN_RESET);  // active-low button
-
-      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, pressed ? GPIO_PIN_SET : GPIO_PIN_RESET);
-
-      const char* msg = pressed ? "Pressed - LED on\r\n" : "Released - LED off\r\n";
+    if (g_buttonChanged) {
+      g_buttonChanged = false;
+      const char* msg = g_pressed ? "Pressed - LED on\r\n" : "Released - LED off\r\n";
       HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), 100);
-
-      last = now;
     }
   }
 }

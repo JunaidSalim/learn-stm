@@ -54,7 +54,7 @@ int main(void) {
   huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;  // no RTS/CTS extra wires
   huart2.Init.OverSampling = UART_OVERSAMPLING_16;
   HAL_UART_Init(&huart2);
-  // HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
   while (1) {
     if (g_buttonChanged) {

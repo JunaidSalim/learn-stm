@@ -41,6 +41,10 @@ int main(void) {
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_USART2_CLK_ENABLE();
 
+  // Port 32-bit = 4 byte = [16 bits reset, 16 bits set] = pin15, pin14, ... pin0
+  // Port A        32-bit register name = BSSR = Bit Set and Reset Register
+  // Port A Pin 14        ===============> Port A BSSR[14] = bin(11)
+
   GPIOInitStruct(GPIOA, GPIO_PIN_2, GPIO_MODE_AF_PP, GPIO_NOPULL, 3);
   GPIOInitStruct(GPIOA, GPIO_PIN_3, GPIO_MODE_INPUT, GPIO_NOPULL);
   GPIOInitStruct(GPIOA, GPIO_PIN_5, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL);  // LED
@@ -55,6 +59,9 @@ int main(void) {
   huart2.Init.OverSampling = UART_OVERSAMPLING_16;
   HAL_UART_Init(&huart2);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+  const char* rdpMsg = (FLASH->OBR & FLASH_OBR_RDPRT) ? "RDP: ON (flash protected)\r\n"
+                                                      : "RDP: OFF (flash open)\r\n";
+  HAL_UART_Transmit(&huart2, (uint8_t*)rdpMsg, strlen(rdpMsg), 100);
 
   while (1) {
     if (g_buttonChanged) {
